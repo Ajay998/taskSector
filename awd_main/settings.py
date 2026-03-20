@@ -121,3 +121,5 @@ STATIC_URL = 'static/'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+CELERY_BROKER_URL = 'redis://localhost:6379'

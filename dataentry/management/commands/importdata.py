@@ -22,9 +22,5 @@ class Command(BaseCommand):
         with open(file_path, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if model.objects.filter(roll_no=row['roll_no']).exists():
-                    self.stdout.write(self.style.WARNING(f"Record with roll_no {row['roll_no']} already exists. Skipping."))
-                    continue
-                self.stdout.write(f"Inserting data: {row}")
                 model.objects.create(**row)
         self.stdout.write(self.style.SUCCESS('Data imported from CSV successfully!'))

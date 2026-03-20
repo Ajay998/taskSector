@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, Customer, Upload
+from .models import Student, Customer, Upload, Employee
 # Register your models here.
 
 
@@ -20,4 +20,10 @@ class UploadAdmin(admin.ModelAdmin):
     list_display = ('model_name', 'file', 'uploaded_at')
     search_fields = ('model_name',)
     list_filter = ('uploaded_at',)
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ('employee_id', 'employee_name', 'designation', 'salary', 'retirement', 'other_benefits', 'total_benefits', 'total_compensation')
+    search_fields = ('employee_id', 'employee_name', 'designation')
+    list_filter = ('designation',)
 
