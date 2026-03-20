@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="padding: 50px;margin-top: 5%;">
+    {% if user.is_authenticated %}
+    <h2 class="text-center">Task Sector</h2>
+    <div class="row pt-5">
+        <!-- Import data -->
+        <div class="col-md-4">
+            <a href="{% url 'import_data' %}" class="text-decoration-none text-dark">
+                <div class="card alert-primary shadow">
+                    <div class="card-header">
+                    <h4>Import Data</h4>
+                    </div>
+                    <div class="card-body">
+                    <p class="card-text">Imports data from CSV file to any table.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    {% else %}
+    <div class="home-info">
+        <h2 class="text-center">Task Sector</h2>
+        <p class="lead text-center text-muted">
+            "Task Sector" is a project-based course to build various tools using the Django framework to automate routine tasks, ranging from data processing to scheduling, and more. 
+            By leveraging Django's capabilities, users can streamline their workflows, saving time and enhancing productivity.
+        </p>
+
+        <div style="display: flex; justify-content: center;">
+            <a href="{% url 'login' %}" class="btn btn-primary">LOGIN</a>
+            &nbsp;<a href="{% url 'register' %}" class="btn btn-success">REGISTER</a>
+        </div>
+    </div>
+
+    {% endif %}
+{% endblock %}
