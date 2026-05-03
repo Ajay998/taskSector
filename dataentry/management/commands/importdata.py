@@ -18,7 +18,6 @@ class Command(BaseCommand):
         model_name = kwargs['model_name'].capitalize()
 
         model = check_csv_errors(file_path, model_name)
-        
         with open(file_path, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:

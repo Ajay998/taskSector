@@ -1,72 +1,48 @@
-import csv
-import os
 import tempfile
-
-from rest_framework import status
-from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from ..utils import check_csv_errors
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework import status
+from ..tasks import import_data_task
 
 
 class ImportDataAPIView(APIView):
     parser_classes = [MultiPartParser, FormParser]
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
     def post(self, request):
-        csv_file = request.FILES.get('file')
+        csv_file   = request.FILES.get('file')
         model_name = request.data.get('model_name')
 
         if not csv_file:
             return Response(
                 {'detail': 'CSV file is required in "file".'},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
-
         if not model_name:
             return Response(
                 {'detail': '"model_name" is required.'},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        temp_path = None
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as temp_file:
-                for chunk in csv_file.chunks():
-                    temp_file.write(chunk)
-                temp_path = temp_file.name
-
-            model = check_csv_errors(temp_path, str(model_name).capitalize())
-            has_roll_no = any(field.name == 'roll_no' for field in model._meta.fields)
-
-            inserted_count = 0
-            skipped_count = 0
-
-            with open(temp_path, 'r') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    if has_roll_no and 'roll_no' in row:
-                        if model.objects.filter(roll_no=row['roll_no']).exists():
-                            skipped_count += 1
-                            continue
-
-                    model.objects.create(**row)
-                    inserted_count += 1
-
+        if not csv_file.name.endswith('.csv'):
             return Response(
-                {
-                    'detail': 'Data imported successfully.',
-                    'model': model.__name__,
-                    'inserted': inserted_count,
-                    'skipped': skipped_count,
-                },
-                status=status.HTTP_201_CREATED,
+                {'detail': 'Only .csv files are allowed.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-        except Exception as error:
+        if csv_file.size > self.MAX_FILE_SIZE:
             return Response(
-                {'detail': str(error)},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'detail': 'File too large. Max size is 10MB.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-        finally:
-            if temp_path and os.path.exists(temp_path):
-                os.remove(temp_path)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='wb') as tmp:
+            for chunk in csv_file.chunks():
+                tmp.write(chunk)
+            temp_path = tmp.name
+
+        task = import_data_task.delay(temp_path, model_name)
+
+        return Response(
+            {'detail': 'Import started.', 'task_id': task.id},
+            status=status.HTTP_202_ACCEPTED
+        )
